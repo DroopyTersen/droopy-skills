@@ -1,0 +1,16 @@
+{
+  "project": 42,
+  "owner": "YOUR_GITHUB_OWNER",
+  "repo": "YOUR_REPO",
+  "projectId": "PVT_...",
+  "statusFieldId": "PVTSSF_...",
+  "statusOptions": {
+    "new": "OPTION_ID_NEW",
+    "approved": "OPTION_ID_APPROVED",
+    "refinement": "OPTION_ID_REFINEMENT",
+    "tech-design": "OPTION_ID_TECH_DESIGN",
+    "implementation": "OPTION_ID_IMPLEMENTATION",
+    "final-review": "OPTION_ID_FINAL_REVIEW",
+    "done": "OPTION_ID_DONE"
+  }
+}

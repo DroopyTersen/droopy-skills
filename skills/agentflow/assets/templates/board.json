@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "columns": [
+    { "id": "new", "name": "New" },
+    { "id": "approved", "name": "Approved" },
+    { "id": "refinement", "name": "Refinement" },
+    { "id": "tech-design", "name": "Tech Design" },
+    { "id": "implementation", "name": "Implementation" },
+    { "id": "final-review", "name": "Final Review" },
+    { "id": "done", "name": "Done" }
+  ],
+  "cards": []
+}

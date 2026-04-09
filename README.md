@@ -27,6 +27,7 @@ Repository policy:
 
 These are the skills this repo is actively meant to hold and copy from:
 
+- `agentflow`: AgentFlow workflow orchestration, Ralph Loop guidance, column rules, and project-local runtime templates; composes with `github-projects` or `azure-devops` for hosted backlogs
 - `azure-devops`: Azure DevOps and Azure Boards workflow guidance, including path discovery and CLI usage
 - `github-projects`: GitHub Projects backlog guidance, including project-path discovery, `gh project` usage, and AgentFlow mappings
 - `droopy-skills-install`: natural-language instructions for copying skills from this repo into project-level or user-level agent directories

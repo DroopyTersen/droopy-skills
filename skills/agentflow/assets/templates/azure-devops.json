@@ -1,0 +1,29 @@
+{
+  "organization": "https://dev.azure.com/YOUR_ORG",
+  "project": "YOUR_PROJECT",
+  "team": "YOUR_TEAM",
+  "board": "Backlog items",
+  "areaPath": "YOUR_PROJECT",
+  "iterationPath": "YOUR_PROJECT",
+  "workItemType": "Product Backlog Item",
+  "boardColumnField": "WEF_GUID_Kanban.Column",
+  "boardColumnDoneField": "WEF_GUID_Kanban.Column.Done",
+  "boardColumns": {
+    "new": "New",
+    "approved": "Approved",
+    "refinement": "Refinement",
+    "tech-design": "Tech Design",
+    "implementation": "Implementation",
+    "final-review": "Final Review",
+    "done": "Done"
+  },
+  "boardColumnDone": {
+    "new": false,
+    "approved": false,
+    "refinement": false,
+    "tech-design": false,
+    "implementation": false,
+    "final-review": false,
+    "done": false
+  }
+}

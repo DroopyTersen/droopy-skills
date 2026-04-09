@@ -33,18 +33,20 @@ If this file exists, it overrides Git remote inference. Use remote inference onl
 | Tags | `System.Tags` |
 | Dependencies | Work item relations |
 
-## Project-Local Reference Files
+## Coordination with the `agentflow` Skill
 
-When working inside an AgentFlow project, use the backend docs in `.agentflow/azure-devops/`:
+When the task is both AgentFlow-related and Azure Boards-related:
 
-- `README.md` for setup, configuration, and core caveats
-- `add.md` for creating cards
-- `list.md` for board queries and workable-card filtering
-- `show.md` for full card display and discussion retrieval
-- `move.md` for Kanban column moves
-- `context.md` for Description vs Discussion rules
-- `tag.md` for tag add/remove/set flows
-- `workflow.md` for `work`, `next`, `feedback`, `depends`, `review`, and `loop`
+- `agentflow` owns the workflow, columns, loop, and `/af` command intent
+- `azure-devops` owns `az boards`, WIQL, work-item mutation details, and board field semantics
+
+Do not assume a modern AgentFlow project still keeps backend docs in `.agentflow/azure-devops/`. The durable project-local files are the runtime files such as:
+
+- `.agentflow/azure-devops.json`
+- `.agentflow/PROJECT_LOOP_PROMPT.md`
+- `.agentflow/RALPH_LOOP_PROMPT.md`
+- `.agentflow/progress.txt`
+- `.agentflow/loop.sh`
 
 ## AgentFlow-Specific Rules
 
@@ -52,14 +54,4 @@ When working inside an AgentFlow project, use the backend docs in `.agentflow/az
 - For questions or proposed approaches, write Discussion comments and add `needs-feedback`.
 - Only write finalized requirements/design back into Description after the human answers.
 - For status-style operations, use WIQL and the configured board column field.
-- For tag removal or exact tag replacement, use `bun .agentflow/azure-devops/api.ts`.
-
-## Helper Script
-
-AgentFlow ships a Bun helper at `.agentflow/azure-devops/api.ts` for operations the CLI does not handle well:
-
-```bash
-bun .agentflow/azure-devops/api.ts tag remove 123 needs-feedback
-bun .agentflow/azure-devops/api.ts tag set 123 "tag1; tag2"
-bun .agentflow/azure-devops/api.ts field set 123 "System.Tags" "value"
-```
+- For tag removal or exact tag replacement, prefer REST/PATCH flows over fragile CLI-only approximations.

@@ -30,19 +30,20 @@ If this file exists, it overrides Git remote inference. Use remote inference onl
 | Priority | Item position in column |
 | PR review feedback | Linked pull request comments |
 
-## Project-Local Reference Files
+## Coordination with the `agentflow` Skill
 
-When working inside an AgentFlow project, use the backend docs in `.agentflow/github/`:
+When the task is both AgentFlow-related and GitHub Projects-related:
 
-- `README.md` for setup, configuration, and performance caveats
-- `add.md` for creating cards
-- `list.md` for board queries and workable-card filtering
-- `show.md` for full card display, comments, and linked PR checks
-- `move.md` for status moves
-- `context.md` for issue body vs issue comments rules
-- `tag.md` for label add/remove flows
-- `workflow.md` for `work`, `next`, `feedback`, `depends`, `review`, and `loop`
-- `pr-feedback.md` for AgentFlow-specific linked-PR remediation
+- `agentflow` owns the workflow, columns, loop, and `/af` command intent
+- `github-projects` owns `gh` commands, GraphQL field metadata, issue/project mutations, and linked-PR inspection
+
+Do not assume a modern AgentFlow project still keeps backend docs in `.agentflow/github/`. The durable project-local files are the runtime files such as:
+
+- `.agentflow/github.json`
+- `.agentflow/PROJECT_LOOP_PROMPT.md`
+- `.agentflow/RALPH_LOOP_PROMPT.md`
+- `.agentflow/progress.txt`
+- `.agentflow/loop.sh`
 
 ## AgentFlow-Specific Rules
 
@@ -51,4 +52,4 @@ When working inside an AgentFlow project, use the backend docs in `.agentflow/gi
 - Only write finalized requirements or chosen designs back into the issue body after the human responds.
 - For list and status operations, prefer a single `gh project item-list --limit 100` query and read labels/body from that response.
 - Always include `comments` when using `gh issue view` for `show`, `feedback`, or conversation-sensitive flows.
-- Keep generic PR review-comment remediation in `gh-address-comments`. Use `.agentflow/github/pr-feedback.md` when the work is explicitly tied to an AgentFlow card and linked PR.
+- Keep generic PR review-comment remediation in `gh-address-comments`. When the work is explicitly tied to an AgentFlow card and linked PR, combine that skill with the `agentflow` card context and this skill's linked-PR queries.
