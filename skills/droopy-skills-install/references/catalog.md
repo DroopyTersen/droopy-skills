@@ -7,6 +7,7 @@ Use this file when the user asks what this repository maintains directly versus 
 These skills are intended to live in this repository's `skills/` folder and be copied from here:
 
 - `azure-devops`
+- `github-projects`
 - `droopy-skills-install`
 - `gh-address-comments`
 - `pdf-to-text`

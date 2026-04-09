@@ -28,6 +28,7 @@ Repository policy:
 These are the skills this repo is actively meant to hold and copy from:
 
 - `azure-devops`: Azure DevOps and Azure Boards workflow guidance, including path discovery and CLI usage
+- `github-projects`: GitHub Projects backlog guidance, including project-path discovery, `gh project` usage, and AgentFlow mappings
 - `droopy-skills-install`: natural-language instructions for copying skills from this repo into project-level or user-level agent directories
 - `gh-address-comments`: GitHub PR review-thread workflow using `gh` CLI
 - `pdf-to-text`: vision-first PDF extraction with bundled rendering and conversion guidance
