@@ -1,80 +1,59 @@
 # Column: Tech Design
 
-**Actor:** Agent (with optional human feedback loop)
-**Agent:** `code-architect` + Codex (dual design)
+**Actor:** Agent, with optional human feedback loop
+**Agent:** Codex only
 **Commit:** Spec commit
 
 ---
 
 ## Summary
 
-Design the technical approach for implementing the work item. This phase focuses on **how** to build it. The goal is to resolve all technical unknowns and create a plan detailed enough that implementation is mostly execution.
+Design the technical approach for implementing the work item. This phase focuses on **how** to build it. The goal is to resolve technical unknowns and create a plan detailed enough that implementation is mostly execution.
 
-**⚠️ THIS PHASE IS NEVER SKIPPED**
+**This phase is never skipped.**
 
-Every card must go through tech-design, even trivial bugs. The question is only whether you need human approval before moving to implementation.
+Every card must go through tech-design, even trivial bugs. The question is only whether the design is obvious enough to proceed without human approval.
 
-### Default Behavior: Research Four Approaches (Dual Design)
+## Default Behavior: Codex-Only Design
 
-**For most work items, research and present FOUR approaches from two sources:**
+Use Codex as the architecture engine for tech design. Do not spawn Claude architect agents, do not request three Claude alternatives, and do not label approaches as Claude-sourced.
 
-**From Claude (3 approaches):**
-1. 🟣 **Minimal** — The smallest change that solves the problem. Quick to implement, but may cut corners or accumulate tech debt. Good for time-sensitive fixes.
+For most work items, produce one recommended Codex design with enough supporting analysis to make the tradeoffs clear. When multiple viable approaches exist, Codex should compare them in its own output and recommend one.
 
-2. 🟣 **Idealistic** — The "right" way if we had unlimited time. Clean architecture, full test coverage, handles all edge cases. May be over-engineered for the actual need.
+Human feedback is required when:
 
-3. 🟣 **Pragmatic** — A balanced middle ground. Addresses the core problem well, maintainable code, reasonable scope. Often the best choice.
+- the work is a feature or refactor with meaningful design choices
+- the bug fix touches more than 2-3 files
+- there are multiple reasonable implementation strategies
+- the design changes UX, rules, data contracts, persistence, or public APIs
+- the agent is not highly confident the chosen approach matches the user's intent
 
-**From Codex (1 approach):**
-4. 🟢 **Codex Design** — Independent architecture proposal from OpenAI Codex. May offer novel perspectives or catch things Claude missed.
+If feedback is needed, post the Codex design and recommendation to discussion/comments, add `needs-feedback`, and exit.
 
-**Then get human feedback:**
-- Compare and contrast all four approaches
-- Explain trade-offs (time, complexity, maintainability, risk)
-- Note unique insights from each source
-- Make a recommendation with rationale
-- Ask the human which approach (or blend) to use
-- Add `needs-feedback` tag and exit
+## When to Skip Human Feedback
 
-### When to Skip Multi-Approach Analysis
+Skipping human feedback does not skip tech-design.
 
-**⚠️ "Skip multi-approach analysis" ≠ "Skip tech-design phase"**
+You may proceed without adding `needs-feedback` only when all of these are true:
 
-You may proceed without presenting approaches if ALL of these are true:
-- It's a small bug fix with an obvious, single-line or trivial fix
-- There is genuinely only ONE reasonable approach (not three)
-- No architectural decisions, new patterns, or design choices involved
-- The fix is low-risk and easily reversible
+- it is a small bug fix with an obvious, single approach
+- there are no architectural decisions, new patterns, or UX choices
+- the change is low-risk and easy to reverse
+- a senior engineer on this project would likely agree with the approach
 
-**For features**: Always present three approaches.
-**For bugs**: Present approaches if the fix touches >2-3 files or has multiple solutions.
-**For refactors**: Always present three approaches.
-
-When in doubt, research the approaches and ask. A 5-minute pause for human input beats hours of rework.
-
-**"Skip multi-approach analysis" means:**
-- ✅ Document the single obvious approach and move to implementation (without `needs-feedback` tag)
-- ❌ It does NOT mean skip tech-design entirely
-- ❌ It does NOT mean jump straight to final-review
-
-**Even a trivial single-line bug fix:**
-1. Gets a tech-design entry documenting the fix approach
-2. Gets a spec commit
-3. Moves to implementation (next iteration)
-4. Then gets implemented (separate iteration)
-
----
+Even then, document the design, create the spec commit, and move the card to implementation. Implementation still happens in a later iteration.
 
 ## Definition of Done
 
-- Dual design completed (Claude + Codex)
-- Four approaches presented with clear source attribution (🟣 Claude / 🟢 Codex)
-- Technical approach documented with rationale
-- Decision section including which source was selected
-- Files to create/modify listed
-- Verification steps specified (specific commands)
-- All unknowns resolved
-- Spec committed
+- Codex-only technical design completed
+- technical approach documented with rationale
+- files to create/modify listed
+- implementation sequence documented
+- verification steps specified with concrete commands
+- TDD plan included
+- all known unknowns resolved or tagged `needs-feedback`
+- spec committed
+- card moved to `implementation` when ready
 
 ---
 
@@ -82,180 +61,79 @@ When in doubt, research the approaches and ask. A 5-minute pause for human input
 
 ### Step 1: Read Card Context
 
-```
-Read the card's context (title, description, type, and Refinement section)
-```
+Read the card's title, description, type, priority, labels, comments/discussion, and Refinement section.
 
-Review the Refinement section for:
-- Functional requirements
-- Acceptance criteria
-- Edge cases
-- Any answered questions in Conversation Log
+Review refinement for:
 
-### Step 2: Launch Architecture Agents (in parallel)
+- functional requirements
+- acceptance criteria
+- edge cases
+- dependencies
+- user decisions already made
+- unanswered questions
 
-Launch Claude code-architect agents **and** Codex **in parallel**. Four independent perspectives: three from Claude (with different focuses) and one from Codex.
+### Step 2: Run Codex Architecture Pass
 
-#### 2a: Start Codex Design (runs in background)
+Use Codex for the architecture design. If you are already running inside Codex, do the architecture work directly in this context instead of spawning a second Codex process. If you are running from another agent environment, run Codex non-interactively:
 
 ```bash
-# Get context for Codex
 REFINEMENT=$(cat << 'EOF'
 {Refinement section from card}
 EOF
 )
 
-codex exec "You are a software architect. Design an implementation approach for this task.
+codex exec "You are a senior software architect. Design the implementation approach for this AgentFlow card.
 
 Task: {card.title}
 
 Requirements:
 $REFINEMENT
 
-Provide a complete architecture design including:
-1. Overview (2-3 sentences)
-2. Files to create (table: file path, purpose)
-3. Files to modify (table: file path, changes)
-4. Key design decisions with rationale
-5. Code sketch (key interfaces/signatures)
-6. Trade-offs analysis (dev time, risk, maintainability, testability)
-7. Implementation sequence (numbered steps)
+Use Codex only. Do not ask Claude agents for alternative designs.
 
-Be specific about file paths. Show actual code sketches.
-Format as markdown." \
+Produce markdown with:
+1. Recommended approach
+2. Alternatives considered, if there are meaningful alternatives
+3. Files to create with purpose
+4. Files to modify with exact changes
+5. Key interfaces, data shapes, or code sketches
+6. Risks and tradeoffs
+7. Implementation sequence
+8. TDD plan
+9. Verification commands and manual checks
+10. Open questions, if any
+
+Be specific about file paths and project conventions." \
   --full-auto \
   --output-last-message .agentflow/codex-architecture.txt \
-  --sandbox read-only &
-
-CODEX_PID=$!
-echo "Codex architecture design started (PID: $CODEX_PID)"
+  --sandbox read-only
 ```
 
-#### 2b: Launch Claude Architect Agents (in parallel)
+### Step 3: Decide Whether Human Feedback Is Needed
 
-```
-# Agent 1: Minimal Changes
-Agent("code-architect")
-> Task: {card.title}
-> Requirements: {from Refinement section}
-> Focus: MINIMAL CHANGES
-> Design the smallest change that solves the problem.
-> Maximize reuse of existing code and patterns.
-> Prioritize: low risk, fast implementation, minimal footprint.
-> Accept trade-offs: may not be the cleanest, may accumulate some tech debt.
+Read the Codex architecture output and decide:
 
-# Agent 2: Clean Architecture
-Agent("code-architect")
-> Task: {card.title}
-> Requirements: {from Refinement section}
-> Focus: CLEAN ARCHITECTURE
-> Design the "right" way if we had unlimited time.
-> Prioritize: maintainability, elegant abstractions, full edge case handling.
-> Accept trade-offs: may be more effort, could be over-engineered for the need.
+- If open questions remain, post the design to discussion/comments, add `needs-feedback`, and exit.
+- If multiple viable approaches need a human preference, post the options and recommendation, add `needs-feedback`, and exit.
+- If the approach is clear and low-risk, finalize it in the card body and continue.
 
-# Agent 3: Pragmatic Balance
-Agent("code-architect")
-> Task: {card.title}
-> Requirements: {from Refinement section}
-> Focus: PRAGMATIC BALANCE
-> Design a balanced approach: quality + reasonable scope.
-> Prioritize: addresses core problem well, maintainable, ships soon.
-> Accept trade-offs: may not be perfect, but good enough and sustainable.
-```
+Do not put unchosen alternatives or agent-human conversation in the durable card body. Keep those in discussion/comments.
 
-#### 2c: Wait for Codex
+### Step 4: Finalize Design
 
-```bash
-wait $CODEX_PID
-echo "Codex architecture design complete"
-cat .agentflow/codex-architecture.txt
-```
+Update the card body with the finalized design only:
 
-Each source (3 Claude agents + Codex) will independently:
-- Analyze the problem through their specific lens
-- Design an implementation approach
-- List files to create/modify
-- Identify risks and trade-offs
+- add a `## Tech Design` section
+- mark `**Status:** Complete`
+- identify Codex as the design source
+- summarize requirements
+- document the chosen approach and rationale
+- list files to create/modify
+- include implementation sequence
+- include verification steps
+- include TDD plan
 
-### Step 2d: Review and Synthesize
-
-After all four designs complete:
-
-1. **Review all approaches** — read each agent's output (including Codex)
-2. **Form your opinion** — which fits best for THIS specific task? Consider:
-   - Is this a small fix or large feature?
-   - How urgent is it?
-   - How complex is the problem?
-   - What's the project's current state (early vs mature)?
-3. **Note concrete differences** — where do the approaches actually diverge in implementation?
-4. **Note Codex insights** — did Codex suggest anything the Claude agents missed?
-
-### Step 3: Present Approaches for Human Feedback (Default)
-
-**Default behavior — present to user and get feedback:**
-
-1. **Brief summary of each approach** — 2-3 sentences capturing the essence
-   - Approach 1: Minimal (Claude)
-   - Approach 2: Clean Architecture (Claude)
-   - Approach 3: Pragmatic (Claude)
-   - Approach 4: Codex Design (🟢 clearly labeled as from Codex)
-2. **Trade-offs comparison** — table or bullet list comparing key dimensions (all 4 approaches)
-3. **Concrete implementation differences** — where do the approaches actually diverge?
-   - Different files touched?
-   - Different abstractions created?
-   - Different levels of test coverage?
-4. **Your recommendation with reasoning** — which approach fits THIS task and WHY
-5. **Ask the user** which approach they prefer (or what blend)
-
-**Important: Codex Attribution**
-- Always label Codex's approach with 🟢 to distinguish it from Claude's approaches
-- In the comparison table, mark the Source column (Claude vs Codex)
-- When storing the final design, record which source was selected
-
-Then:
-- Post approaches to card **discussion** (not body — see backend docs)
-- Add `needs-feedback` tag
-- Exit this iteration — human will respond in discussion
-
-**Important:** Proposed approaches are options, not decisions. Never put multiple approaches in the card body. The body only gets the final chosen design.
-
-**Exception — skip to finalize (rare):**
-
-Only skip presenting approaches if ALL of these are true:
-- Trivial bug fix (single-line or <10 lines changed)
-- Genuinely only ONE way to fix it
-- Zero design decisions involved
-- Low risk, easily reversible
-
-If skipping, document why in the card context, then proceed to Step 5.
-
-### Step 4: Human Responds (only if tagged)
-
-This step happens outside the Ralph Loop:
-1. Human reviews tech design options (in discussion)
-2. Human responds in discussion:
-   - Approves approach, OR
-   - Selects from options, OR
-   - Provides feedback
-3. Human removes `needs-feedback` tag
-
-Next Ralph iteration picks up the card and continues.
-
-### Step 5: Finalize Design
-
-1. Read human's decision from discussion (see backend docs for how)
-2. **Now update the card body** with the chosen design only:
-   - Add Tech Design section with the selected approach
-   - Include Decision section noting which approach was chosen and why
-   - Do NOT include unchosen approaches in the body
-   - Do NOT include conversation in the body
-3. Ensure documentation includes:
-   - Files to create/modify
-   - Implementation sequence
-   - Verification steps (specific commands)
-   - TDD plan
-
-### Step 6: Create Spec Commit and Push
+### Step 5: Create Spec Commit and Push
 
 ```bash
 git add .
@@ -263,20 +141,13 @@ git commit -m "spec({type}): {title}"
 git push -u origin HEAD
 ```
 
-The `-u` flag sets upstream tracking for the branch.
+The `/af` command or backend workflow should stage the appropriate files for the backend. Do not stage unrelated working tree changes.
 
-Note: The `/af` command handles staging the appropriate files for the backend.
+### Step 6: Update Card and Move
 
-Examples:
-- `spec(feature): add user authentication`
-- `spec(bug): fix pagination offset`
-- `spec(refactor): extract validation utils`
-
-### Step 7: Update Card and Move
-
-1. Append Tech Design section to card context (see template below)
-2. Update History table
-3. Move card to `implementation` column
+1. Append the finalized Tech Design section to card context/body.
+2. Add or update the History table.
+3. Move the card to `implementation`.
 
 ---
 
@@ -284,104 +155,53 @@ Examples:
 
 ### Feature
 
-**Focus:** How do we build this new functionality?
-**Design Depth:** Medium to High
-
-**Document:**
-- Component architecture
-- New interfaces/types
-- Integration approach
-- Data flow (if complex)
-- Test strategy
+Document component architecture, new interfaces/types, integration approach, data flow if complex, and test strategy.
 
 ### Bug
 
-**Focus:** What went wrong? How do we fix it safely?
-**Design Depth:** Low to Medium
-
-**Document:**
-- Root cause identification
-- Fix approach
-- Regression prevention
-- Failing test case (often helpful to write before fixing)
+Document root cause, fix approach, regression prevention, and the failing test to write first.
 
 ### Refactor
 
-**Focus:** How do we transform current state to desired state?
-**Design Depth:** Medium to High
-
-**Document:**
-- Current state documentation
-- Desired state specification
-- Migration/transformation steps
-- Behavior preservation verification
+Document current state, desired state, migration steps, behavior preservation checks, and rollback risk.
 
 ---
 
-## Card Context Update
+## Discussion Template When Human Input Is Needed
 
-### If Human Input Needed (awaiting feedback)
+```markdown
+Agent ({YYYY-MM-DD}): Tech Design Recommendation
 
-**Post to discussion** (see backend docs for how):
+Codex analyzed this work item and recommends:
 
-```
-Agent (YYYY-MM-DD): Tech Design Options
+## Recommended Approach
+{summary}
 
-I've analyzed four approaches for this work item (3 from Claude + 1 from Codex).
+## Alternatives Considered
+{only include if meaningful alternatives exist}
 
-## 🟣 Approach 1: Minimal (Claude)
-{The smallest change that solves the problem}
-- **Pros:** Quick to implement, low risk
-- **Cons:** May accumulate tech debt
-- **Complexity:** Low | **Risk:** Low
+## Tradeoffs
+| Aspect | Assessment |
+|--------|------------|
+| Effort | {Low/Medium/High} |
+| Risk | {Low/Medium/High} |
+| Maintainability | {assessment} |
+| Testability | {assessment} |
 
-## 🟣 Approach 2: Clean Architecture (Claude)
-{The "right" way if we had unlimited time}
-- **Pros:** Handles all edge cases, easy to extend
-- **Cons:** Significant effort, may be over-engineered
-- **Complexity:** High | **Risk:** Medium
-
-## 🟣 Approach 3: Pragmatic (Claude)
-{Balanced middle ground}
-- **Pros:** Addresses core problem well, maintainable
-- **Cons:** {trade-off}
-- **Complexity:** Medium | **Risk:** Low
-
-## 🟢 Approach 4: Codex Design
-{Codex's independent architecture proposal}
-- **Pros:** {from Codex output}
-- **Cons:** {from Codex output}
-- **Complexity:** {assessment} | **Risk:** {assessment}
-
-## Comparison
-| Aspect | 🟣 Minimal | 🟣 Clean | 🟣 Pragmatic | 🟢 Codex |
-|--------|------------|----------|--------------|----------|
-| Source | Claude | Claude | Claude | Codex |
-| Effort | Low | High | Medium | {assess} |
-| Maintainability | Fair | Excellent | Good | {assess} |
-| Edge cases | Partial | Full | Most | {assess} |
-| Unique insights | - | - | - | {any novel ideas?} |
-
-## Recommendation
-I recommend **Approach {N}** ({source}) because {reasoning specific to this task}.
-
-Which approach would you prefer? Or a blend?
+## Open Questions / Decision Needed
+{specific question for the human}
 ```
 
-**Attribution labels:**
-- 🟣 **Claude** - purple circle for Claude's approaches
-- 🟢 **Codex** - green circle for Codex's approach
+Then add the `needs-feedback` tag and stop.
 
-**Do NOT update card body.** Proposed approaches belong in discussion until human selects one.
-
-### If Complete (moving to implementation)
+## Card Body Template When Complete
 
 ```markdown
 ---
 
 ## Tech Design
 **Date:** {YYYY-MM-DD}
-**Agent:** code-architect + Codex
+**Agent:** Codex
 **Status:** Complete
 
 ### Requirements Summary
@@ -392,15 +212,9 @@ Which approach would you prefer? Or a blend?
 - Constraint 1
 
 ### Decision
-**Approaches Considered:**
-1. 🟣 **Minimal** (Claude) — {brief summary}
-2. 🟣 **Clean Architecture** (Claude) — {brief summary}
-3. 🟣 **Pragmatic** (Claude) — {brief summary}
-4. 🟢 **Codex Design** — {brief summary}
+**Selected:** Codex recommended approach
 
-**Selected:** {Name} (Source: {Claude|Codex}) (or blend: "{description}")
-
-**Rationale:** {Why this approach was chosen, including human's input}
+**Rationale:** {why this approach fits the requirements and project constraints}
 
 ### Technical Design
 
@@ -427,11 +241,11 @@ Which approach would you prefer? Or a blend?
 | Type check | `bun run typecheck` | No errors |
 | Unit tests | `bun test` | All pass |
 | Build | `bun run build` | Success |
-| UI test | {scenario} | {expected behavior} |
+| Manual test | {scenario} | {expected behavior} |
 
-**TDD Plan:**
-- [ ] Write test for {scenario 1}
-- [ ] Write test for {scenario 2}
+### TDD Plan
+- [ ] Write failing test for {scenario 1}
+- [ ] Write failing test for {scenario 2}
 
 ### Spec Commit
 **SHA:** `{sha}`
@@ -439,72 +253,29 @@ Which approach would you prefer? Or a blend?
 **Date:** {YYYY-MM-DD}
 ```
 
-**Note:** No Conversation Log in the body. The discussion about approach selection lives in the discussion area (see backend docs).
-
----
-
 ## Tag Handling
 
 | Condition | Action |
 |-----------|--------|
-| Multiple viable approaches | Add `needs-feedback`, document options |
-| Significant decision needed | Add `needs-feedback`, document recommendation |
+| Human decision needed | Add `needs-feedback`, document the question |
 | Human approved/selected | Remove `needs-feedback`, finalize design |
 | External blocker | Add `blocked`, document reason |
 
----
-
-## Entry Criteria
-
-- Refinement phase complete
-- Functional requirements documented
-- No `needs-feedback` or `blocked` tag
-
----
-
 ## Exit Criteria
 
-- Dual design completed (Claude + Codex)
-- Technical design documented with source attribution
-- Human approved approach (if feedback was needed)
-- Decision section included with selected source (🟣 Claude or 🟢 Codex)
-- Verification steps specified
-- Spec committed
-- Card moved to `implementation`
-
----
-
-## Dual Design Philosophy
-
-Two sources provide independent perspectives. Focus is on **finding the best approach**, not on which source wins.
-
-**Why dual design?**
-- Different models approach problems differently
-- Codex may suggest patterns Claude wouldn't consider
-- Independent analysis reduces blind spots
-- Cross-checking validates good ideas
-
-**What to look for in Codex's design:**
-- Novel architectural patterns
-- Different file organization
-- Alternative abstractions
-- Unique trade-off analysis
-
-**Attribution matters:**
-- 🟣 Purple = Claude's approaches
-- 🟢 Green = Codex's approach
-- Recording the source helps evaluate which model provides better architecture advice over time
-
----
+- Codex-only design documented
+- human feedback captured or explicitly not needed
+- verification plan and TDD plan included
+- spec committed
+- card moved to `implementation`
 
 ## Important Notes
 
-- **Do not implement in this phase** - only design and plan
-- **Exception for bugs:** Writing a failing test is acceptable and encouraged
-- **Be specific about verification** - vague plans lead to skipped verification
-- **Junior developer test:** If a junior couldn't execute this plan, add more detail
-- **Document the decision** - future readers should understand why
-- **Always attribute the source** - helps track which model provides better architecture advice
+- Do not implement in this phase; design and plan only.
+- Exception for bugs: writing a failing test is acceptable and encouraged.
+- Be specific about verification; vague plans lead to skipped verification.
+- If a junior engineer could not execute the plan, add more detail.
+- Do not spawn Claude architect agents for tech design.
 
 ---
 

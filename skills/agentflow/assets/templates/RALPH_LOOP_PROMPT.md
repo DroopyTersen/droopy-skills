@@ -161,8 +161,8 @@ Read the matching column reference from the installed `agentflow` skill, then fo
 |--------|-------|--------|
 | `approved` | - | Move to refinement, continue |
 | `refinement` | `code-explorer` | Requirements documented OR `needs-feedback` tag |
-| `tech-design` | `code-architect` | Design + spec commit OR `needs-feedback` tag |
-| `implementation` | `code-reviewer` + Codex | Dual review → fix issues → impl + fix commits → final-review |
+| `tech-design` | Codex | Codex-only design + spec commit OR `needs-feedback` tag |
+| `implementation` | Codex | Implement → Codex review → fix valid issues → final-review |
 
 **After completing the phase work, proceed immediately to Steps 7-9. Do NOT start another card.**
 
@@ -275,7 +275,7 @@ Implemented run.normalizer.ts (28 tests), code review 92/100, pushed.
 - **Return to main** — Before exiting, push and switch back to main so next iteration starts clean
 - **Always use rebase** — Use `git pull --rebase` and `git rebase origin/main`, never merge. This avoids polluting branches with duplicate commits from squash-merged PRs
 - **Output completion signal and STOP** — After completing work, output `AGENTFLOW_ITERATION_COMPLETE` and stop generating. Do NOT process another card. Only output `AGENTFLOW_NO_WORKABLE_CARDS` when there are truly ZERO cards in workable columns.
-- **Use the agents** — Call code-explorer, code-architect, code-reviewer as specified
+- **Use Codex for tech design** — Do not spawn Claude/code-architect agents for tech-design. Follow the Codex-only tech-design column reference.
 - **Skip tagged cards** — Never pick up cards with `needs-feedback` or `blocked` tags
 - **Notify dependents** — When a card reaches `done`, notify cards that depend on it
 

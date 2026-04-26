@@ -149,7 +149,7 @@ Run code review on implementation.
 
 1. Find card, verify it's in implementation or final-review
 2. Read `.agentflow/cards/{id}.md` for tech design and implementation details
-3. Invoke `Agent("code-reviewer")` with context
+3. Run Codex review with context
 4. Output review markdown
 
 Can be used standalone outside the normal workflow.
@@ -158,37 +158,28 @@ Can be used standalone outside the normal workflow.
 
 ## /af loop
 
-External bash script for terminal use, or Task agent for running from within Claude.
+External bash script for terminal use.
 
 ### From Terminal (Recommended)
 
 ```bash
-.agentflow/loop.sh              # Default: 20 iterations
-.agentflow/loop.sh 50           # Custom max
+.agentflow/loop.sh              # Codex, 20 iterations
+.agentflow/loop.sh 50           # Codex, custom max
 ```
 
-The script pipes `.agentflow/RALPH_LOOP_PROMPT.md` to Claude with `--chrome` flag. Each iteration:
-1. Claude runs `/af list --workable`, selects card, executes phase
-2. Claude updates card, pushes commits, returns to main, exits
+The script pipes `.agentflow/RALPH_LOOP_PROMPT.md` to Codex by default. Each iteration:
+1. Codex runs `/af list --workable`, selects card, executes phase
+2. Codex updates card, pushes commits, returns to main, exits
 3. Script checks for `AGENTFLOW_NO_WORKABLE_CARDS` or continues
 
-### From Within Claude (Task Agent)
+### From Another Agent Environment
 
-**Do NOT use Bash with `run_in_background: true` to run loop.sh** — it spawns Claude subprocesses which stalls.
+Do not run the loop in the background from inside another agent unless that agent can safely manage long-running child processes.
 
-Instead, use a Task agent:
+If you need an in-agent loop, execute one iteration at a time:
 ```
-Use Task tool with:
-  subagent_type: "general-purpose"
-  run_in_background: true
-  prompt: |
-    Run the AgentFlow loop. Read .agentflow/RALPH_LOOP_PROMPT.md and execute iterations.
-    For each iteration:
-    1. Run /af list --workable to find cards
-    2. If no workable cards, output AGENTFLOW_NO_WORKABLE_CARDS and stop
-    3. Select highest priority card, run /af work <id>
-    4. After completing the phase, continue to next iteration
-    Max iterations: 50
+Read .agentflow/RALPH_LOOP_PROMPT.md and execute exactly one iteration.
+Output AGENTFLOW_ITERATION_COMPLETE or AGENTFLOW_NO_WORKABLE_CARDS, then stop.
 ```
 
 ### Output Files

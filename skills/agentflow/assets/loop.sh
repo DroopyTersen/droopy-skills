@@ -1,13 +1,13 @@
 #!/bin/bash
 #
 # AgentFlow Ralph Loop
-# Runs Claude or Codex repeatedly until no workable cards remain.
+# Runs Codex by default, or Claude explicitly, until no workable cards remain.
 #
 # Usage:
-#   .agentflow/loop.sh              # Default: Claude, 20 iterations
-#   .agentflow/loop.sh 50           # Claude, 50 iterations
-#   .agentflow/loop.sh --codex      # Codex, 20 iterations
-#   .agentflow/loop.sh --codex 50   # Codex, 50 iterations
+#   .agentflow/loop.sh              # Default: Codex, 20 iterations
+#   .agentflow/loop.sh 50           # Codex, 50 iterations
+#   .agentflow/loop.sh --codex      # Codex, 20 iterations (explicit)
+#   .agentflow/loop.sh --codex 50   # Codex, 50 iterations (explicit)
 #   .agentflow/loop.sh --claude 50  # Claude, 50 iterations (explicit)
 #
 # Requirements:
@@ -23,7 +23,7 @@
 set -e
 
 # Parse arguments
-CLI_TYPE="claude"
+CLI_TYPE="codex"
 MAX_ITERATIONS=20
 
 while [[ $# -gt 0 ]]; do

@@ -75,7 +75,7 @@ bun test
 # More tests = implementation added test coverage
 ```
 
-#### 4c. Code Review
+#### 4c. Codex Code Review
 
 Get the diff context:
 ```bash
@@ -85,13 +85,20 @@ echo "Branch: $BRANCH"
 echo "Files: $FILES_CHANGED"
 ```
 
-Run code-reviewer agent:
-```
-Task(subagent_type="code-reviewer")
-> Review the changes on this branch compared to main.
-> Branch: {branch}
-> Files changed: {files}
-> Card: #{issue_number} - {title}
+Run Codex review. Do not run Claude/code-reviewer by default unless the human explicitly asks.
+
+```bash
+codex exec "You are a senior code reviewer. Review the changes on branch '$BRANCH' compared to main.
+
+Files changed: $FILES_CHANGED
+Card: #{issue_number} - {title}
+
+Focus on bugs, regressions, security issues, missing error handling, and violations of project patterns.
+Skip style preferences and speculative suggestions.
+Return concise markdown with file/line references and concrete fixes." \
+  --full-auto \
+  --output-last-message .agentflow/codex-review.txt \
+  --sandbox read-only
 ```
 
 Verify:

@@ -41,7 +41,7 @@ Review the complete card context containing:
 
 Optionally perform additional verification:
 - Manual testing
-- UI review via Claude Chrome
+- UI review via browser tooling
 - Code inspection
 - Run tests locally
 - Check staging/production deployment

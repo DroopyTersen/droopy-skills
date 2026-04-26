@@ -1,29 +1,29 @@
 # Column: Implementation
 
 **Actor:** Agent
-**Agent:** `code-reviewer` (after implementation)
-**Commit:** Implementation commit
+**Reviewer:** Codex only by default
+**Commit:** Implementation commit, plus optional review-fix commit
 
 ---
 
 ## Summary
 
-Execute the tech design. Write tests first (TDD preferred), implement the solution, run verification, and get code review. The tech design should have resolved all unknowns, so this phase is primarily execution.
+Execute the tech design. Write tests first, implement the solution, run verification, and get Codex code review. The tech design should have resolved unknowns, so this phase is primarily execution.
 
-This column is typically agent-only with no human interaction (unless blocked or drift detected).
+This column is typically agent-only with no human interaction unless blocked or drift is detected.
 
----
+AgentFlow must not call Claude for implementation review by default. Use Claude only if the human explicitly asks for it.
 
 ## Definition of Done
 
-- Tests written (before implementation when possible)
-- Implementation complete per tech design
-- Dual code review completed (Claude + Codex)
-- Suggestions synthesized (valid ones implemented, others documented as skipped)
-- Implementation committed
-- Review fixes committed (if any valid suggestions were implemented)
-- All verification steps passing
-- Card moved to Final Review
+- tests written before implementation when possible
+- implementation complete per tech design
+- Codex code review completed
+- valid review suggestions implemented or documented as skipped
+- implementation committed
+- review fixes committed separately if applicable
+- all verification steps passing
+- card moved to Final Review
 
 ---
 
@@ -31,231 +31,111 @@ This column is typically agent-only with no human interaction (unless blocked or
 
 ### Step 1: Read Card Context
 
-```
-Read the card's context (title, description, Refinement, and Tech Design sections)
-```
+Read the card title, description, Refinement section, and Tech Design section.
 
 Find the Tech Design section:
-- Look for `## Tech Design` with `**Status:** Complete`
-- If no complete tech design found, exit: "Waiting for tech design to complete"
 
-### Step 2: Write Tests First (TDD)
+- look for `## Tech Design` with `**Status:** Complete`
+- if no complete tech design exists, exit with: `Waiting for tech design to complete`
 
-Before implementing, write tests based on the verification plan:
+### Step 2: Write Tests First
 
-**Features:**
-- Write tests for happy path
-- Write tests for edge cases
+Follow the project TDD rules.
 
-**Bugs:**
-- Write failing test that reproduces the bug
-
-**Refactors:**
-- Verify existing tests cover behavior to preserve
+- Bugs: write a failing test that reproduces the bug before implementation.
+- Features: write tests for happy path and important edge cases.
+- Refactors: verify existing tests cover behavior before changing structure.
 
 ### Step 3: Implement the Solution
 
 Follow the tech design:
-- Create new files as specified
-- Modify existing files as planned
-- Follow project conventions from `PROJECT_LOOP_PROMPT.md`
-- Follow the implementation sequence from tech design
+
+- create new files as specified
+- modify existing files as planned
+- follow project conventions from `.agentflow/PROJECT_LOOP_PROMPT.md`
+- keep scope limited to the card
+- do not stage unrelated working tree changes
 
 ### Step 4: Cursory Verification
 
-Quick checks to catch obvious issues:
+Adapt commands to the project, preferring the project prompt:
 
 ```bash
-# Adapt these to the project (check PROJECT_LOOP_PROMPT.md)
-bun run typecheck || npm run typecheck || npx tsc --noEmit
-bun test || npm test
-bun run build || npm run build
+bun run typecheck
+bun test
+bun run build
 ```
 
-### Step 5: Complete Implementation
+### Step 5: Codex Code Review
 
-If using TDD, iterate until tests pass:
-- Make the failing tests pass
-- Refactor if needed while keeping tests green
-
-### Step 6: Dual Code Review (Claude + Codex)
-
-Run both Claude's code-reviewer agent and OpenAI Codex in parallel. Two independent reviewers catch more issues than one. Focus is on **actionable suggestions**, not scores.
-
-#### 6a: Launch Reviews in Parallel
-
-**Start Codex review first (runs in background):**
+Run Codex review only. Do not launch Claude/code-reviewer agents unless the human explicitly asks.
 
 ```bash
-# Create review prompt with context
 BRANCH=$(git branch --show-current)
 FILES_CHANGED=$(git diff --name-only main..HEAD | tr '\n' ', ')
 
-codex exec "You are a code reviewer. Review the changes on branch '$BRANCH' compared to main.
+codex exec "You are a senior code reviewer. Review the changes on branch '$BRANCH' compared to main.
 
 Files changed: $FILES_CHANGED
 
-Focus on finding real issues:
-1. Bugs and logic errors (most important)
+Focus on:
+1. Bugs and logic errors
 2. Security vulnerabilities
 3. Missing error handling in critical paths
-4. Performance issues with significant impact
+4. Performance issues with meaningful impact
+5. Violations of existing project patterns
 
-For each issue, provide:
-- File path and line number
-- What the problem is
-- Why it matters
-- Concrete fix (before/after code)
+For each issue provide:
+- file path and line number when possible
+- what the problem is
+- why it matters
+- concrete fix recommendation
 
 Skip style preferences, minor optimizations, and speculative suggestions.
-Only suggest what you can verify from the actual code.
-Format as markdown." \
+Only report issues you can defend from the code." \
   --full-auto \
   --output-last-message .agentflow/codex-review.txt \
-  --sandbox read-only &
-
-CODEX_PID=$!
-echo "Codex review started (PID: $CODEX_PID)"
+  --sandbox read-only
 ```
 
-**Run Claude code-reviewer agent:**
-
-```
-Agent("code-reviewer")
-> Review the changes for this card
-> Card: {card.title}
-> Tech design: {from card}
-> Files changed: {list of files}
-```
-
-**Wait for Codex to complete:**
+Post the review to the card:
 
 ```bash
-wait $CODEX_PID
-echo "Codex review complete"
-cat .agentflow/codex-review.txt
-```
-
-#### 6b: Post Reviews to GitHub Issue
-
-Post each review as a separate comment on the card's GitHub issue so the human can review them individually.
-
-**Get the issue number from the card context** (look for the GitHub issue link).
-
-**Post Claude's review:**
-
-```bash
-gh issue comment {ISSUE_NUMBER} --body "## 🟣 Claude Code Review
-
-$(cat << 'EOF'
-{Claude's review output here}
-EOF
-)"
-```
-
-**Post Codex's review:**
-
-```bash
-gh issue comment {ISSUE_NUMBER} --body "## 🟢 Codex Code Review
+gh issue comment {ISSUE_NUMBER} --body "## Codex Code Review
 
 $(cat .agentflow/codex-review.txt)"
 ```
 
-**Labels to distinguish:**
-- 🟣 **Claude** - purple circle
-- 🟢 **Codex** - green circle
+### Step 6: Synthesize and Apply Valid Suggestions
 
-#### 6d: Synthesize Suggestions
+Evaluate each Codex suggestion:
 
-Collect suggestions from both reviewers. Evaluate each one:
+- real bug, security issue, or logic error: fix it
+- concrete maintainability issue tied to project patterns: evaluate and fix if worthwhile
+- style preference or speculation: document as skipped
 
-| Signal | Likely Valid | Action |
-|--------|--------------|--------|
-| Both reviewers found it | High confidence | Fix it |
-| Clear bug/security issue | Valid regardless of source | Fix it |
-| Concrete before/after code | Reviewer is confident | Evaluate merit |
-| Vague or speculative | Likely false positive | Skip it |
-| Style preference only | Low value | Skip it |
-
-**Questions to ask for each suggestion:**
-- Is this a real bug or just a preference?
-- Does the suggested fix actually improve the code?
-- Would ignoring this cause problems?
-
-Create a decision list:
-
-```markdown
-## Review Synthesis
-
-### Will Implement
-| Suggestion | Source | Why |
-|------------|--------|-----|
-| Add null check in parseInput() | Both | Prevents crash on malformed input |
-| Use parameterized query | Codex | Fixes SQL injection vulnerability |
-
-### Skipping
-| Suggestion | Source | Why Not |
-|------------|--------|---------|
-| Rename 'data' to 'userData' | Codex | Style preference, existing convention |
-| Add try-catch around X | Claude | Error already handled upstream |
-```
-
-#### 6e: Implement Valid Suggestions
-
-Work through the "Will Implement" list:
-
-1. Apply each fix
-2. Run tests after each to catch regressions
-3. If a fix is complex, assess if it's blocking or can be follow-up
+If fixes are made:
 
 ```bash
-# After each fix
-bun test  # or npm test
-```
-
-#### 6f: Commit Review Fixes
-
-If any fixes were made, create a dedicated commit:
-
-```bash
+bun test
 git add .
-git commit -m "fix({scope}): address code review feedback
-
-Applied from dual review (Claude + Codex):
-- {fix 1}
-- {fix 2}
-
-Reviewed and skipped:
-- {suggestion}: {why}"
-
+git commit -m "fix({scope}): address Codex review feedback"
 git push origin HEAD
 ```
 
-**Note:** Separate commit from implementation. Documents that code was reviewed and improved.
-
 ### Step 7: Full Verification
 
-Execute all verification steps from tech design:
+Run every verification step from the Tech Design:
 
 ```bash
-# All tests
 bun test
-
-# Type check
 bun run typecheck
-
-# Build
 bun run build
-
-# Integration tests (if applicable)
-bun test integration/
-
-# UI testing via Claude Chrome (if applicable)
 ```
 
-All verification must pass before proceeding.
+Run any required integration, harness, or UI checks documented in the tech design or project prompt.
 
-**If verification cannot be completed:** See [Verification Blockers](#verification-blockers) below.
+If verification cannot be completed, do not move the card forward. Add `blocked` with a clear explanation.
 
 ### Step 8: Create Implementation Commit and Push
 
@@ -265,96 +145,38 @@ git commit -m "{type}({scope}): {title}"
 git push origin HEAD
 ```
 
-This pushes to the feature branch established in the Approved phase.
-
-**Type mapping:**
-- feature → `feat`
-- bug → `fix`
-- refactor → `refactor`
-
-**Examples:**
-- `feat(auth): add OAuth login with Google provider`
-- `fix(pagination): correct offset calculation`
-- `refactor(validation): extract shared utilities`
+If review fixes were committed first, ensure the implementation and review-fix commits are both pushed.
 
 ### Step 9: Update Card and Move
 
-1. Append Implementation and Code Review sections to card context
-2. Update History table
-3. Move card to `final-review` column
+1. Append Implementation and Codex Code Review sections to card context/body.
+2. Update the History table.
+3. Move the card to `final-review`.
 
 ---
 
 ## Drift Prevention
 
-If during implementation you discover the tech design needs significant changes:
+If implementation reveals the tech design needs significant changes:
 
-1. Stop implementation
-2. Document the issue in Conversation Log
-3. Add `needs-feedback` tag
-4. Add note explaining what needs revision
-5. Exit this iteration (human will review)
+1. stop implementation
+2. document the issue in discussion/comments
+3. add `needs-feedback`
+4. explain what needs revision
+5. exit this iteration
 
-Do NOT continue implementing if the design is wrong.
+Do not continue implementing if the design is wrong.
 
----
+## Verification Blockers
 
-## By Work Item Type
+If any expected verification step cannot be completed:
 
-### Feature
+1. stop immediately
+2. add `blocked`
+3. comment with the failed step, error, attempted fixes, and what is needed to unblock
+4. exit the iteration
 
-**TDD Approach:**
-1. Write tests for happy path
-2. Write tests for edge cases
-3. Implement until tests pass
-4. Refactor with green tests
-
-**Verification:** Full test coverage for new code
-
-### Bug
-
-**TDD Approach:**
-1. Write failing test that reproduces bug
-2. Implement fix
-3. Verify test passes
-4. Run regression tests
-
-**Verification:** Bug test passes, existing tests still pass
-
-### Refactor
-
-**TDD Approach:**
-1. Ensure existing tests cover behavior
-2. Make incremental changes
-3. Keep tests green throughout
-
-**Verification:** All existing tests still pass, behavior unchanged
-
----
-
-## Dual Code Review Philosophy
-
-Two reviewers provide independent perspectives. Focus is on **valid suggestions**, not scores.
-
-**Why dual review?**
-- Different models catch different issues
-- Suggestions found by both are high-confidence
-- Reduces false negatives (missed bugs)
-- Cross-checking filters out false positives (bad suggestions)
-
-**What makes a suggestion valid?**
-- Identifies a real bug, security issue, or logic error
-- Provides concrete before/after code
-- The fix demonstrably improves the code
-- Not just a style preference or speculative concern
-
-**What to skip:**
-- Vague concerns without concrete fixes
-- Style preferences that don't affect functionality
-- Speculative suggestions about "potential" issues
-- Minor optimizations with unclear benefit
-
----
+The card must not move to Final Review while verification is incomplete.
 
 ## Card Context Update
 
@@ -376,155 +198,54 @@ Two reviewers provide independent perspectives. Focus is on **valid suggestions*
 | `path/to/existing.ts` | Modified | Added Y functionality |
 
 ### Verification Results
-
-#### Cursory Verification
-- Type check: Pass
-- Build: Pass
-- Basic tests: Pass
-
-#### Full Verification
 | Step | Result | Notes |
 |------|--------|-------|
 | Type check | Pass | No errors |
 | Unit tests | Pass | 15 passed, 2 new |
-| Integration tests | Pass | 5 passed |
 | Build | Pass | |
-| UI testing | Pass | Tested via Claude Chrome |
+| Manual/UI testing | Pass | {scenario} |
 
----
-
-## Dual Code Review
+### Codex Code Review
 **Date:** {YYYY-MM-DD}
 
-### Suggestions Received
-
-**From Claude (code-reviewer):**
+#### Suggestions Received
 - {suggestion 1}
 - {suggestion 2}
-
-**From Codex:**
-- {suggestion 1}
-- {suggestion 2}
-
-### Review Synthesis
 
 #### Implemented
-| Suggestion | Source | Why Valid |
-|------------|--------|-----------|
-| Add null check in parseInput() | Both | Prevents crash on malformed input |
-| Use parameterized query | Codex | Fixes SQL injection |
+| Suggestion | Why Valid |
+|------------|-----------|
+| Add null check in parseInput() | Prevents crash on malformed input |
 
 #### Skipped
-| Suggestion | Source | Why Not |
-|------------|--------|---------|
-| Rename variable | Codex | Style preference only |
-| Add extra logging | Claude | Not needed for this feature |
+| Suggestion | Why Not |
+|------------|---------|
+| Rename variable | Style preference only |
 
 ### Commits
 **Implementation:** `{sha1}` - {type}({scope}): {title}
-**Review Fixes:** `{sha2}` - fix({scope}): address code review feedback
+**Review Fixes:** `{sha2}` - fix({scope}): address Codex review feedback
 **Branch:** `{branch-name}`
 ```
 
----
-
-## Tag Handling
-
-| Condition | Action |
-|-----------|--------|
-| Tech design needs revision | Add `needs-feedback`, document issue |
-| Verification cannot be completed | Add `blocked`, document reason |
-| External blocker | Add `blocked`, document reason |
-| Generally no tags in this phase | Proceed through to final-review |
-
----
-
-## Verification Blockers
-
-If you cannot complete any expected verification step, **do not move the card forward**. This includes situations such as:
-
-- **UI verification unavailable** - Claude Chrome extension not configured or accessible
-- **Test harness broken** - Tests fail to run due to environment issues (not test failures)
-- **Build system errors** - Build fails due to missing dependencies or configuration
-- **Integration environment down** - External services needed for verification are unavailable
-- **Missing tools** - Required tools (typecheck, linter, etc.) not installed or configured
-
-### When Blocked on Verification
-
-1. **Stop immediately** - Do not proceed to commit or move the card
-2. **Add `blocked` tag** to the card
-3. **Add detailed comment** to the Conversation Log explaining:
-   - Which verification step failed
-   - What error or issue was encountered
-   - What was attempted to resolve it
-   - What is needed to unblock (e.g., "Chrome extension needs to be enabled", "test database needs to be running")
-4. **Exit this iteration** - Allow human to review and resolve
-
-### Card Update for Verification Blocker
-
-```markdown
----
-
-### Conversation Log
-
-**Agent ({YYYY-MM-DD}):**
-Blocked on verification. Unable to complete: {verification step}
-
-**Issue:** {Detailed description of what failed}
-
-**Attempted:** {What was tried to resolve it}
-
-**Needed to unblock:** {What human action or configuration is required}
-
----
-```
-
-### Example Blockers
-
-| Verification Step | Blocker Example | Comment |
-|-------------------|-----------------|---------|
-| UI testing | "Claude Chrome MCP not available in non-interactive mode" | "Need to configure --mcp-config for Chrome extension or run verification manually" |
-| Type check | "npx tsc command not found" | "TypeScript not installed, run: bun install" |
-| Integration tests | "Connection refused to localhost:5432" | "PostgreSQL database not running, start with: docker-compose up -d" |
-| Build | "Module '@/components' not found" | "Path aliases not configured, check tsconfig.json" |
-
-**Critical:** The card must NOT move to Final Review if verification is incomplete. A blocked card with clear documentation allows humans to either fix the environment or manually verify and move the card forward.
-
----
-
-## Entry Criteria
-
-- Tech design complete (`Status: Complete`)
-- Spec committed
-- Verification steps documented
-- No `needs-feedback` or `blocked` tag
-
----
-
 ## Exit Criteria
 
-- Tests written and passing
-- Implementation matches tech design
-- Dual code review completed (Claude + Codex)
-- Suggestions synthesized and documented (implemented vs skipped with reasons)
-- Implementation committed
-- Review fixes committed (if any valid suggestions were implemented)
-- All verification steps passed
-- Card moved to `final-review`
-
----
+- tests written and passing
+- implementation matches tech design
+- Codex review completed
+- valid Codex suggestions handled
+- implementation committed
+- review fixes committed separately if applicable
+- verification passed
+- card moved to `final-review`
 
 ## Important Notes
 
-- **TDD is preferred** - write tests before implementation
-- **For bugs, start with a failing test** - it proves you understand the bug
-- **Follow the tech design** - don't deviate without good reason
-- **Run full verification** - don't skip steps from the verification plan
-- **Dual review is required** - run both Claude and Codex reviewers
-- **Focus on valid suggestions** - real bugs and security issues, not style preferences
-- **Document decisions** - record what was implemented AND what was skipped (with reasons)
-- **Commit fixes separately** - review fixes get their own commit after implementation
-- **Sequence: Cursory → Dual Review → Fix → Full Verify** - catches issues early
+- Write tests before implementation, especially for bugs.
+- Follow the tech design; return to tech-design if it is wrong.
+- Do not call Claude/code-reviewer by default.
+- Run full verification before moving forward.
+- Keep review fixes in a separate commit when possible.
 
 ---
 

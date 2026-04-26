@@ -78,8 +78,11 @@ Before starting:
 Typical entrypoints:
 
 ```bash
-.agentflow/loop.sh --codex
-.agentflow/loop.sh --claude
+.agentflow/loop.sh
+.agentflow/loop.sh 50
+.agentflow/loop.sh --codex 50
 ```
+
+Codex is the default loop engine. Use `--claude` only when a human explicitly asks for Claude.
 
 The loop prompt and the column refs enforce the one-card, one-column rule.
