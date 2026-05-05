@@ -32,6 +32,7 @@ These are the skills this repo is actively meant to hold and copy from:
 - `github-projects`: GitHub Projects backlog guidance, including project-path discovery, `gh project` usage, and AgentFlow mappings
 - `droopy-skills-install`: natural-language instructions for copying skills from this repo into project-level or user-level agent directories
 - `gh-address-comments`: GitHub PR review-thread workflow using `gh` CLI
+- `grill-me`: plan and design stress-testing through one-question-at-a-time alignment interviews
 - `pdf-to-text`: vision-first PDF extraction with bundled rendering and conversion guidance
 - `pr-guide`: guided PR walkthrough generation for review and onboarding
 - `ui-design-iteration-loop`: iterative screenshot-driven UI critique and polish loop
