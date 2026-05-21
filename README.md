@@ -37,6 +37,10 @@ These are the skills this repo is actively meant to hold and copy from:
 - `pr-guide`: guided PR walkthrough generation for review and onboarding
 - `ui-design-iteration-loop`: iterative screenshot-driven UI critique and polish loop
 
+## Maintained Guides
+
+- [`docs/multiagent-guide`](./docs/multiagent-guide/README.md): generalized production patterns for multi-agent web applications with the AI SDK, including streaming, subagent fan-out, typed UI messages, tracing, persistence, limits, and model registries
+
 ## Documentation-Only Skills
 
 These are valuable skills to keep track of even if this repo does not maintain them directly.
