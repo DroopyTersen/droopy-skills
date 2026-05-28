@@ -35,6 +35,7 @@ These are the skills this repo is actively meant to hold and copy from:
 - `grill-me`: plan and design stress-testing through one-question-at-a-time alignment interviews
 - `pdf-to-text`: vision-first PDF extraction with bundled rendering and conversion guidance
 - `pr-guide`: guided PR walkthrough generation for review and onboarding
+- `self-improvement-loop`: generalized eval/rubric/harness setup and iterative score-improvement loop using Codex/subagent judges
 - `ui-design-iteration-loop`: iterative screenshot-driven UI critique and polish loop
 
 ## Maintained Guides
