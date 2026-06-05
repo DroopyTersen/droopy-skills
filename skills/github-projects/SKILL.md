@@ -24,6 +24,7 @@ Read only the files needed for the current intent:
 - [references/local-index.md](references/local-index.md) when you want to reuse or update the machine-local project-path manifest
 - [references/agentflow.md](references/agentflow.md) when the project uses AgentFlow
 - [references/github-projects-cli.md](references/github-projects-cli.md) when you need `gh project`, `gh issue`, GraphQL, or linked-PR commands
+- [references/project-timelines.md](references/project-timelines.md) when you need to inspect or adjust GitHub Project timeline/roadmap views, Gantt-like row order, date bars, or feature/story nesting
 - [scripts/path-index.ts](scripts/path-index.ts) when you need deterministic reads or writes of the machine-local manifest
 
 ## Core Rules
