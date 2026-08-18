@@ -1,24 +1,42 @@
 ---
 name: pr-guide
-description: Creates a guided tour of a Pull Request that walks reviewers through the changes in a logical order
+description: Create a guided PR walkthrough that orders changes for reviewers by abstraction and dependency. Use when a user asks for a PR guide, PR walkthrough, reviewer tour, or self-contained PR explanation, whether delivered in chat, written to a file, added to a GitHub PR description, or sent to another user-specified target; optionally include curated inline diffs and code snippets.
 ---
 
 # PR Walkthrough Guide
 
-This command creates a guided tour of a Pull Request that walks reviewers through the changes in a logical order, making large PRs more digestible by telling a story rather than presenting a flat list of files.
+Create a guided tour of a Pull Request that walks reviewers through the changes in a logical order. Make large PRs more digestible by telling a story rather than presenting a flat list of files. Keep the walkthrough method independent from its delivery target so the same guide can be returned in chat, written to a file, added to a PR description, or delivered elsewhere.
 
-## When to Use
+## Resolve the Request
 
-- Reviewing complex PRs with many file changes
-- Onboarding team members to understand a feature implementation
-- Creating documentation for significant changes
-- Making PRs more approachable for reviewers unfamiliar with the codebase
+Determine these settings before producing the walkthrough:
+
+1. **PR reference** - GitHub PR URL, PR number, or branch comparison.
+2. **Output target** - Any destination the user specifies, including:
+   - the current chat response
+   - a Markdown file at a user-selected path
+   - the GitHub PR description
+   - another explicit target available through the current tools
+3. **Evidence depth**:
+   - **Standard** (default) - Preserve the concise guide style: explain what to inspect, cite files and important lines, and do not inline substantial code.
+   - **Inline evidence** - Make the guide self-contained by placing curated changed hunks or code snippets directly below the file entry that explains them.
+
+Honor settings stated in the user's instruction. Infer obvious wording such as "show me here" as chat output, "put this in the PR" as the PR description, and "make it self-contained" or "include the important diffs" as inline evidence. If the PR reference or output target is genuinely unclear, ask only for the missing information. Do not ask the user to choose an evidence depth when they did not request one; use Standard.
+
+Treat the output target as a delivery setting, not as part of the analysis. Follow the same architecture mapping, review order, and walkthrough structure for every target. Adapt presentation syntax only when the destination does not support Markdown.
+
+Example requests:
+
+- `$pr-guide #123 — show the standard walkthrough here in chat`
+- `$pr-guide #123 — make the chat walkthrough self-contained with inline evidence`
+- `$pr-guide #123 — add the standard walkthrough to the GitHub PR description`
+- `$pr-guide #123 — save the walkthrough to docs/reviews/PR-123.md`
 
 ## Process
 
-### Step 1: Gather PR Information
+### Step 1: Gather PR Information and Delivery Settings
 
-First, ask the user for the PR they want to create a guide for:
+If the request does not identify a PR, ask:
 
 > What PR would you like me to create a walkthrough guide for?
 >
@@ -27,6 +45,8 @@ First, ask the user for the PR they want to create a guide for:
 > - A PR number if we're in the repo (e.g., `#123` or just `123`)
 > - A branch name to compare against main
 
+If the request does not identify an output target, ask where to deliver it. Do not default to a repository file. If the user already supplied both the PR and target, proceed without reconfirming them.
+
 ### Step 2: Fetch and Analyze the PR
 
 Once you have the PR reference:
@@ -34,7 +54,7 @@ Once you have the PR reference:
 1. **Get the file list** - Use `gh pr view <number> --json files,additions,deletions,title,body` to get changed files and PR description
 2. **Read the PR description** - Understand the stated intent and any context provided
 3. **Identify the spec or ticket** - Look for linked issues, specs, or requirements documents mentioned in the PR
-4. **Read each changed file** - Use the Read tool to understand what each file does and how it changed
+4. **Read each changed file and its diff** - Understand what each file does, what changed, and which exact hunks are important to the PR's behavior
 
 ### Step 3: Identify the Architecture
 
@@ -99,11 +119,11 @@ While analyzing, note (but don't dwell on):
 - **Positive patterns** - Good practices worth highlighting
 - **Code reuse** - How well does this leverage existing infrastructure?
 
-### Step 6: Create the Walkthrough Document
+### Step 6: Compose the Walkthrough
 
 Write the guide with these sections:
 
-```markdown
+````markdown
 # PR #[number] Walkthrough: [Title]
 
 Brief description of what this PR accomplishes.
@@ -134,6 +154,8 @@ Key points:
 - What boundaries, contracts, or orchestration it establishes
 - Which lower-level files it leads into
 
+[In Inline evidence mode only: include the critical changed hunk or focused code snippet here, followed by a short explanation of what the evidence proves.]
+
 ### Layer 1: [High-Level Layer Name]
 
 Brief intro to what this layer does.
@@ -146,6 +168,8 @@ Key points:
 - What the main changes are
 - Why they matter
 - How they connect to other parts
+
+[In Inline evidence mode only: include the critical changed hunk or focused code snippet here.]
 
 [Repeat for each file in this layer]
 
@@ -191,23 +215,47 @@ Highlight how this PR:
 |------|-------|---------|
 | file1.ts | +100 | Brief description |
 | file2.ts | +50/-20 | Brief description |
-```
+
+## Evidence Coverage (Inline evidence mode only)
+
+- Included inline: [critical files or behavioral areas represented by excerpts]
+- Review in the full diff: [material files or areas intentionally not reproduced]
+````
 
 ## Writing Guidelines
 
 ### For Each File Entry
 
-- **Don't show full code** - Just explain what to look for
 - **Give context** - Why does this file exist? What role does it play?
 - **Highlight key lines** - Point to specific line numbers for important logic
 - **Connect the dots** - How does this file relate to others in the PR?
+
+### Evidence Depth
+
+In **Standard** mode:
+
+- Explain what to look for without reproducing substantial code.
+- Cite important files and line numbers when stable links or local line references are available.
+- Keep the guide a concise map of the implementation.
+
+In **Inline evidence** mode:
+
+- Place evidence immediately after the explanation it supports; do not collect all snippets in a detached appendix.
+- Prefer exact unified diff hunks because they show the before/after change. Use a focused current-code snippet when unchanged surrounding context is necessary to understand the new behavior.
+- Include the important evidence for entry points, public contracts, orchestration, core business logic, meaningful edge cases, migrations or configuration, and tests that demonstrate the behavior.
+- Omit routine imports, formatting-only changes, generated output, lockfile churn, repetitive call-site edits, and other mechanical changes unless they are essential to understanding the PR.
+- Keep enough surrounding context to make each excerpt understandable. Label the file and language, preserve added/removed lines accurately, and mark any omitted middle section explicitly rather than presenting edited text as a contiguous diff.
+- Follow each excerpt with one or two sentences explaining what changed, why it matters, and how it connects to the next review step.
+- Never dump whole files or the entire PR diff merely to appear comprehensive. Curate the smallest set of excerpts that lets a reviewer understand and question the implementation from the walkthrough alone.
+- End with an **Evidence Coverage** note that identifies important files represented inline and any material area intentionally left for direct diff review.
+- Do not expose secrets or sensitive values found in code, configuration, logs, fixtures, or the existing PR description. Redact the value and explain the omission.
 
 ### For the Overall Guide
 
 - **Use progressive disclosure** - Start with the best high-level entry point, establish the mental model, then move down into implementation details.
 - **Separate stack direction from abstraction level** - Frontend-to-backend and backend-to-frontend are both valid, but the guide should begin high on the abstraction ladder either way.
 - **Tell a story** - The reader should understand the feature by following the guide
-- **Be concise** - This is a map, not a copy of the code
+- **Be proportionate** - Standard mode is a concise map; Inline evidence mode is a curated, self-contained review packet
 - **Use diagrams** - ASCII art is great for showing data flow
 - **Link to spec** - Reference requirements when relevant
 - **Make it scannable** - Clear headers, tables, bullet points
@@ -219,14 +267,16 @@ Highlight how this PR:
 - Assume the reader is smart but unfamiliar with this code
 - Don't be exhaustive - highlight what matters
 
-## Output Location
+## Deliver to the Selected Target
 
-Save the walkthrough to:
-```
-docs/[feature-area]/solutioning/PR-[number]-Walkthrough.md
-```
+Do not assume a Markdown file. Deliver only to the target the user selected:
 
-Or ask the user where they'd like it saved.
+- **Chat** - Put the complete walkthrough in the final response. Do not write a file unless the user also requested one.
+- **Markdown file** - Use the exact requested path. If the user selected a file but omitted the path, ask for it rather than inventing a repository location.
+- **GitHub PR description** - Update the selected PR only when the user explicitly requested this target. Preserve existing description content that remains useful. Replace an existing walkthrough section when one is clearly identifiable; otherwise integrate or append the walkthrough without silently discarding the author's context. Verify the resulting PR body after the update.
+- **Another target** - Use the destination and format the user specified. If the target is unavailable or would require authority the user has not granted, do not silently substitute a file; explain the constraint and ask for a reachable target.
+
+When the user requests multiple targets, generate one canonical walkthrough and deliver equivalent content to each, adapting formatting only as required by the destination.
 
 ## Example Layering Strategies
 
@@ -254,7 +304,7 @@ Or ask the user where they'd like it saved.
 ## Common Pitfalls to Avoid
 
 - **Don't just list files** - That's what GitHub already does
-- **Don't copy-paste code** - Explain, don't repeat
+- **Don't dump code without interpretation** - In Inline evidence mode, curate and explain exact evidence; in Standard mode, point the reviewer to it
 - **Don't review in detail** - This is a guide, not a code review
 - **Don't assume context** - Explain connections explicitly
 - **Don't skip small files** - A 1-line constant change might be important context
@@ -268,9 +318,14 @@ Before delivering the walkthrough:
 - [ ] The order progressively discloses lower-level implementation details
 - [ ] Stack direction and abstraction level are both considered explicitly
 - [ ] Each file has clear purpose and context
-- [ ] Reader can understand the feature without reading code
+- [ ] Standard mode gives the reviewer a reliable mental model before opening the diff
+- [ ] Inline evidence mode, when requested, lets the reviewer understand the critical implementation without opening the full diff
 - [ ] Connections between files are explicit
 - [ ] Any reuse of existing code is highlighted
 - [ ] Diagram(s) help visualize the architecture (if complex)
 - [ ] Quick reference table is complete
 - [ ] Review notes capture any concerns or questions
+- [ ] The walkthrough is delivered only to the user-selected target(s)
+- [ ] Standard mode stays concise, or Inline evidence mode places curated evidence beside each relevant explanation
+- [ ] Inline evidence, when requested, covers the critical behavior and states any material omissions
+- [ ] Existing destination content is preserved unless the user explicitly requested replacement
