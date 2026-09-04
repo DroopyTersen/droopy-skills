@@ -33,25 +33,14 @@ If this file exists, it overrides Git remote inference. Use remote inference onl
 | Tags | `System.Tags` |
 | Dependencies | Work item relations |
 
-## Coordination with the `agentflow` Skill
+## Coordination with AgentFlow
 
-When the task is both AgentFlow-related and Azure Boards-related:
+The `agentflow` skill owns workflow, approval, stage transitions, and next-card selection. This skill owns provider operations. Read project-local `.agentflow/azure-devops.json`. No loop or prompt runtime files are required.
 
-- `agentflow` owns the workflow, columns, loop, and `/af` command intent
-- `azure-devops` owns `az boards`, WIQL, work-item mutation details, and board field semantics
-
-Do not assume a modern AgentFlow project still keeps backend docs in `.agentflow/azure-devops/`. The durable project-local files are the runtime files such as:
-
-- `.agentflow/azure-devops.json`
-- `.agentflow/PROJECT_LOOP_PROMPT.md`
-- `.agentflow/RALPH_LOOP_PROMPT.md`
-- `.agentflow/progress.txt`
-- `.agentflow/loop.sh`
-
-## AgentFlow-Specific Rules
-
-- AgentFlow stores durable card context in Description and dialogue in Discussion.
-- For questions or proposed approaches, write Discussion comments and add `needs-feedback`.
-- Only write finalized requirements/design back into Description after the human answers.
-- For status-style operations, use WIQL and the configured board column field.
-- For tag removal or exact tag replacement, prefer REST/PATCH flows over fragile CLI-only approximations.
+- Keep current requirements and implementation plans in Description; record approvals, material discoveries, and completion evidence in Discussion. Ask questions in the active conversation unless external discussion was requested.
+- Create cards only when requested or approved; default to New. Explicitly set and verify the configured Kanban column.
+- Query status using the configured board-scoped column field. Use the visible Approved-column order when choosing next work; do not substitute work-item ID or generic priority. Use Computer Use when the view's rank is unavailable through provider tools.
+- Record dependencies as work-item relations plus readable references and the actual prerequisite.
+- No mandatory `needs-feedback` tag or manual removal is required. Preserve unrelated tags.
+- For exact tag replacement/removal, use documented REST/PATCH operations. If an existing project has `.agentflow/azure-devops/api.ts`, inspect and reuse its supported operations rather than assuming that helper exists in every project.
+- Read current Description and Discussion before editing and verify the result after mutation.

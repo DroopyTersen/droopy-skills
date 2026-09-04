@@ -1,42 +1,38 @@
 ---
 name: agentflow
-description: Use when the user mentions AgentFlow, Ralph Loop, cards, backlog columns, `/af` commands, working the next task, or wants a Kanban workflow for AI-assisted development. AgentFlow owns the workflow and loop orchestration; provider skills own GitHub Projects or Azure DevOps CLI details.
+description: Manage AgentFlow cards and carry selected work through research, technical design, implementation, verification, review, and completion in Codex or Claude. Use for AgentFlow boards, backlog items, stage changes, or requests to work the next card.
 ---
 
 # AgentFlow
 
-Use this skill for the workflow layer of AgentFlow:
+Work directly in the current Codex or Claude task. AgentFlow defines the board workflow; the product manages execution, context, and native sub-agents. No AgentFlow CLI, shell loop, iteration files, or nested agent processes are needed.
 
-- interpreting `/af` commands or natural backlog requests
-- enforcing the seven-column process
-- deciding what happens in refinement, tech-design, implementation, and final-review
-- running or restoring the Ralph Loop
-- setting up project-local `.agentflow/` runtime files
+Read [core.md](references/core.md), then only the current stage and the provider information needed for the request.
 
-## Progressive Disclosure
+| Stage | Meaning |
+| --- | --- |
+| [New](references/columns/01_new.md) | Captured for consideration; any level of detail |
+| [Approved](references/columns/01b_approved.md) | Eligible work, ordered visually on the board |
+| [Refinement](references/columns/02_refinement.md) | Claimed work; research and clarify requirements as needed |
+| [Tech Design](references/columns/03_tech-design.md) | Write and critique the implementation plan; await human approval |
+| [Implementation](references/columns/04_implementation.md) | Code, verify, review, clean up, verify again, and open the PR |
+| [Final Review](references/columns/05_final-review.md) | Ready for Andrew's review and requested revisions |
+| [Done](references/columns/06_done.md) | Requested delivery and verification are complete |
 
-Read only the files needed for the current intent:
+## Working rules
 
-- [references/backend-selection.md](references/backend-selection.md) when you need to detect the backend or decide which peer skill to use
-- [references/runtime-files.md](references/runtime-files.md) when setting up a project or restoring missing `.agentflow/` runtime files
-- [references/command-router.md](references/command-router.md) when interpreting `/af` commands or natural-language requests
-- [references/core.md](references/core.md) for shared concepts like columns, tags, priorities, dependencies, and body-vs-discussion rules
-- [references/commands/add.md](references/commands/add.md) for `/af add`
-- [references/commands/list-status-show.md](references/commands/list-status-show.md) for `/af list`, `/af status`, and `/af show`
-- [references/commands/move-tag-context.md](references/commands/move-tag-context.md) for `/af move`, `/af tag`, and `/af context`
-- [references/commands/workflow.md](references/commands/workflow.md) for `/af work`, `/af next`, `/af feedback`, `/af depends`, `/af review`, and `/af loop`
-- [references/columns/](references/columns/) only for the current card's column
-- [references/setup-github.md](references/setup-github.md), [references/setup-azure-devops.md](references/setup-azure-devops.md), or [references/setup-json.md](references/setup-json.md) when configuring a project
-- [references/prompts/](references/prompts/) only when launching the specialist agent for the current phase
-- [references/json-backend/](references/json-backend/) only when the project uses the local JSON backend
-- [assets/loop.sh](assets/loop.sh) and [assets/templates/](assets/templates/) when you need to copy runtime files into `.agentflow/`
+- Create cards only when Andrew requests or approves their creation. Suggest evidence-backed cards without creating them automatically.
+- Moving a card to Approved makes it eligible; it does not start work. A named card wins. When asked to work the next card, take the top unblocked Approved card in the board's visible order.
+- Claim selected work by moving it to Refinement immediately and confirming the change. Existing requirements may satisfy Refinement without new writing. Obvious localized fixes may skip formal Tech Design.
+- Infer collaboration versus autonomous work from the kickoff. Research independently when unclear. Human approval before implementing a written Tech Design is still required unless explicitly waived.
+- Carry forward existing authorization. Normal card updates, approval records, reviews, verification, commits, pushes, and PR creation belong to authorized execution. Merge, PR completion, auto-merge, and deployment need an explicit request.
+- Keep requirements and plans on the card. Use comments for decisions, approvals, material changes, and completion evidence. Do not create spec files, spec commits, embedded history tables, or author/model branding.
 
-## Core Rules
+## Supporting references
 
-- AgentFlow owns workflow policy. `github-projects` owns GitHub CLI and project-field behavior. `azure-devops` owns Azure CLI, WIQL, and board-field behavior.
-- Detect the backend from project-local config, not from guesswork: `.agentflow/azure-devops.json`, then `.agentflow/github.json`, then `.agentflow/board.json`.
-- If the backend clearly requires `github-projects` or `azure-devops` and that peer skill is not installed at the project or user level, ask the user to install it. One example source is `https://github.com/DroopyTersen/droopy-skills`.
-- Keep only runtime state in `.agentflow/`. Do not copy the whole skill into `.agentflow/`.
-- Never skip columns. Even trivial bugs still move one phase at a time.
-- Approved cards are workable.
-- Ralph Loop means one card, one column transition, one iteration.
+- [Backend selection](references/backend-selection.md): configuration and board order; compose with `github-projects` or `azure-devops` for provider operations.
+- [Setup](references/setup.md): configure a new project without copying workflow instructions into it.
+- [Local JSON](references/json-backend.md): only for existing or explicitly selected local boards.
+- [Implementation reviews](references/reviews.md): the four independent reviews after initial verification.
+
+Repository instructions supply actual commands, environments, and conventions. Use the `thermo-nuclear-code-quality-review` skill for that review when available and the `pr-guide` skill for the PR description. The review reference includes the required criteria if a review skill is unavailable. Do not invoke the standalone `improve-codebase-architecture` exploration or grilling workflow.

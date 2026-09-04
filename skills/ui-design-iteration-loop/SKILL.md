@@ -37,9 +37,11 @@ For each iteration:
 
 ### 2. Critique (be harsh, visual-only)
 
-- List the **5 worst, most visually glaring issues** (order by severity/impact).
-- Critiques must be **specific and actionable** (spacing, hierarchy, typography, alignment, contrast, consistency, density, affordances, empty states).
-- Avoid "taste" without a concrete reason (e.g., "looks bad" is not allowed).
+- Push for **5 distinct, specific critiques** in every iteration, ordered by impact. A polished first impression is a reason to inspect more carefully, not to end the critique.
+- Start with visible defects, then look for weaker hierarchy, awkward spacing, typography, alignment, density, consistency, and unclear affordances. Inspect relevant viewport sizes and states within the requested scope before concluding there is little to improve.
+- For each critique, name the element, describe the visible evidence, explain the design or usability cost, and propose a concrete improvement. A refinement opportunity counts even when the current design is functional.
+- Distinguish an observed defect from a design judgment. Do not invent broken behavior, inflate severity, split one issue into several, or repeat a resolved critique to reach five.
+- If a thorough inspection still supports fewer than five worthwhile changes, explain what you inspected and why the remaining changes would not improve the result. Generic praise such as "looks great" is not a substitute for this inspection.
 
 ### 3. Fix the 5 issues
 

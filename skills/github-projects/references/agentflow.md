@@ -30,26 +30,15 @@ If this file exists, it overrides Git remote inference. Use remote inference onl
 | Priority | Item position in column |
 | PR review feedback | Linked pull request comments |
 
-## Coordination with the `agentflow` Skill
+## Coordination with AgentFlow
 
-When the task is both AgentFlow-related and GitHub Projects-related:
+The `agentflow` skill owns workflow, approval, stage transitions, and next-card selection. This skill owns provider operations. Read project-local `.agentflow/github.json`; reuse an existing paginated query helper when present. No loop or prompt runtime files are required.
 
-- `agentflow` owns the workflow, columns, loop, and `/af` command intent
-- `github-projects` owns `gh` commands, GraphQL field metadata, issue/project mutations, and linked-PR inspection
-
-Do not assume a modern AgentFlow project still keeps backend docs in `.agentflow/github/`. The durable project-local files are the runtime files such as:
-
-- `.agentflow/github.json`
-- `.agentflow/PROJECT_LOOP_PROMPT.md`
-- `.agentflow/RALPH_LOOP_PROMPT.md`
-- `.agentflow/progress.txt`
-- `.agentflow/loop.sh`
-
-## AgentFlow-Specific Rules
-
-- AgentFlow stores durable card context in the issue body and dialogue in issue comments.
-- For questions or proposed approaches, add an issue comment and add the `needs-feedback` label.
-- Only write finalized requirements or chosen designs back into the issue body after the human responds.
-- For list and status operations, prefer a single `gh project item-list --limit 100` query and read labels/body from that response.
-- Always include `comments` when using `gh issue view` for `show`, `feedback`, or conversation-sensitive flows.
-- Keep generic PR review-comment remediation in `gh-address-comments`. When the work is explicitly tied to an AgentFlow card and linked PR, combine that skill with the `agentflow` card context and this skill's linked-PR queries.
+- Keep current requirements and the implementation plan in the issue body. Record approvals, material discoveries, and completion evidence in comments. Ask questions in the active conversation unless external discussion was requested.
+- Create cards only when requested or approved. Default to New and explicitly set/requery the Project status after adding an item; do not assume provider automation chose the correct column.
+- Use the actual Project status, not issue open/closed state. Read visible Approved-column order when selecting the next card; do not sort by issue number or age. Use Computer Use if the active board view's order is unavailable through provider tools.
+- Prefer paginated board reads over N+1 issue queries or a truncated first page. Inspect repository identity on multi-repository boards.
+- Include comments when reading a card whose decisions or approvals matter. Read linked PR comments and review threads when addressing revisions.
+- Record dependencies through native relationships when available and an explicit `## Dependencies` section with issue references and the required condition, such as `Blocked by: #123`.
+- No mandatory `needs-feedback` label or manual tag removal is required. Preserve unrelated labels.
+- Use `gh-address-comments` for PR-comment mechanics when appropriate, while following AgentFlow's current stage and permission rules.

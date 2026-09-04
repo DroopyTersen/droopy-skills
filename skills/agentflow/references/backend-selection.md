@@ -1,48 +1,19 @@
-# Backend Selection
+# Backlog provider
 
-Use this reference when you need to determine how an AgentFlow project stores its backlog.
+Use explicit task context and existing project configuration. The established detection order is `.agentflow/azure-devops.json`, then `.agentflow/github.json`, then `.agentflow/board.json`. Do not infer IDs from a repository name when configuration already supplies them.
 
-## Detection Order
+| Configuration | Provider guidance |
+| --- | --- |
+| `azure-devops.json` | Installed `azure-devops` skill: board-scoped Kanban fields, work-item relations, Description and Discussion |
+| `github.json` | Installed `github-projects` skill: issue-backed Project items, status fields, issue/PR comments |
+| `board.json` | [Local JSON guidance](json-backend.md) |
 
-Check these files in order:
+Provider tools and CLIs remain useful; removing the AgentFlow CLI does not remove `gh`, `az`, or existing reliable helpers. Provider skills supply mechanics; [core.md](core.md) supplies workflow and approval rules. Do not let older provider examples reintroduce automatic card creation, priority sorting, feedback-tag gates, or spec commits.
 
-1. `.agentflow/azure-devops.json`
-2. `.agentflow/github.json`
-3. `.agentflow/board.json`
+Use project-local helpers when present, particularly a paginated board query. Include comments and linked PR review threads when decisions depend on them. Filter using repository identity as well as issue number when a board spans repositories. Re-read current bodies before replacing them, preserve concurrent updates, and verify status/body changes after mutation.
 
-Use the first one that exists. Do not invent a backend when a project-local config is already present.
+For next-card selection, inspect the board's visible order, using Computer Use if provider data does not expose the active view's order. Never substitute creation time, issue number, labels, or an unverified API ordering. If the relevant view or rank cannot be established, report the missing information instead of pretending a card is first.
 
-## Backend Pairings
+Preserve native dependency links and a readable item section identifying prerequisites. Use real provider status and relevant delivery evidence rather than assuming issue open/closed equals stage. Existing labels are metadata, not mandatory human-operated gates.
 
-| Config file | Backend | Peer skill |
-|---|---|---|
-| `.agentflow/azure-devops.json` | Azure Boards | `azure-devops` |
-| `.agentflow/github.json` | GitHub Projects | `github-projects` |
-| `.agentflow/board.json` | Local JSON | none |
-
-## Source of Truth
-
-- Project-local `.agentflow/*.json` files are the runtime source of truth.
-- Provider-specific path discovery and CLI details belong to the provider skill.
-- AgentFlow should not re-derive GitHub project IDs or Azure board fields if the config file already contains them.
-
-## Missing Config
-
-If none of the config files exist:
-
-1. Ask the user which backlog provider they want: GitHub Projects, Azure DevOps, or local JSON.
-2. Read [runtime-files.md](runtime-files.md) and copy the minimal `.agentflow/` runtime files if they are missing.
-3. Read the matching setup reference:
-   - [setup-github.md](setup-github.md)
-   - [setup-azure-devops.md](setup-azure-devops.md)
-   - [setup-json.md](setup-json.md)
-
-## Missing Peer Skill
-
-If the chosen backend is GitHub Projects or Azure DevOps and the peer skill is not installed at the project or user level:
-
-- tell the user the matching skill is required
-- ask them to install it
-- one example source is `https://github.com/DroopyTersen/droopy-skills`
-
-Keep that prompt subtle. The important fact is that AgentFlow assumes the provider skill exists; where it came from is secondary.
+If configuration is missing and setup was requested, read [setup.md](setup.md). If a provider skill is unavailable, use verified available provider tooling or explain the specific missing capability; do not rebuild a workflow engine.
