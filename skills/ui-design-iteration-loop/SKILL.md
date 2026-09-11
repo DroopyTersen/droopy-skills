@@ -1,6 +1,6 @@
 ---
 name: ui-design-iteration-loop
-description: Iterative UI design refinement loop driven by screenshots. Use when you want to repeatedly (1) open a provided URL (or focused region), (2) take a screenshot, (3) give the 5 most glaring visual/aesthetic critiques, (4) implement fixes in code, (5) refresh and repeat for N iterations. Great for polishing UI, improving visual hierarchy, fixing spacing issues, or making designs feel more premium.
+description: Refine a UI through repeated screenshot critique and scoped fixes. Use when the user requests iterative visual polishing.
 argument-hint: "[URL] [iterations]"
 ---
 
