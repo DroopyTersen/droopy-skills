@@ -1,0 +1,4 @@
+interface:
+  display_name: "Print Markdown Document"
+  short_description: "Render Markdown to compact printable PDFs"
+  default_prompt: "Use $print-md-document to render this Markdown file as a compact PDF and print it if requested."

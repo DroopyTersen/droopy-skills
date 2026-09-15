@@ -1,6 +1,6 @@
 ---
 name: pr-guide
-description: Create a guided PR walkthrough that orders changes for reviewers by abstraction and dependency. Use when a user asks for a PR guide, PR walkthrough, reviewer tour, or self-contained PR explanation, whether delivered in chat, written to a file, added to a GitHub PR description, or sent to another user-specified target; optionally include curated inline diffs and code snippets.
+description: Create a guided PR walkthrough that orders changes for reviewers by abstraction and dependency. Use when a user asks for a PR guide, PR walkthrough, reviewer tour, or self-contained PR explanation, whether delivered in chat, written to a file, added to a GitHub PR description, or sent to another user-specified target; optionally include curated inline evidence or a complete PDF packet with every changed file’s full diff.
 ---
 
 # PR Walkthrough Guide
@@ -19,6 +19,7 @@ Determine these settings before producing the walkthrough:
    - another explicit target available through the current tools
 3. **Evidence depth**:
    - **Standard** (default) - Preserve the concise guide style: explain what to inspect, cite files and important lines, and do not inline substantial code.
+   - **Complete packet** - Include the guide and full textual diffs of every changed file in semantic order. Follow [complete-packet.md](references/complete-packet.md) for pinned inventory collection, deterministic assembly and PDF verification. This is distinct from curated Inline evidence.
    - **Inline evidence** - Make the guide self-contained by placing curated changed hunks or code snippets directly below the file entry that explains them.
 
 Honor settings stated in the user's instruction. Infer obvious wording such as "show me here" as chat output, "put this in the PR" as the PR description, and "make it self-contained" or "include the important diffs" as inline evidence. If the PR reference or output target is genuinely unclear, ask only for the missing information. Do not ask the user to choose an evidence depth when they did not request one; use Standard.

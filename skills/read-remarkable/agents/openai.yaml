@@ -1,0 +1,3 @@
+interface:
+  display_name: "Read reMarkable"
+  short_description: "Read saved annotations, notebooks, and live drawings"

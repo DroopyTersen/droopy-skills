@@ -1,0 +1,3 @@
+interface:
+  display_name: "Send to reMarkable"
+  short_description: "Send compact PDFs and review packets to reMarkable"
