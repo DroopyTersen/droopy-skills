@@ -30,6 +30,7 @@ These are the skills this repo is actively meant to hold and copy from:
 - `agentflow`: AgentFlow stages, two-pass technical design, four implementation reviews, verification, and human delivery approval; composes with `github-projects` or `azure-devops` for hosted backlogs
 - `azure-devops`: Azure DevOps and Azure Boards workflow guidance, including path discovery and CLI usage
 - `github-projects`: GitHub Projects backlog guidance, including project-path discovery, `gh project` usage, and AgentFlow mappings
+- `github-stacked-prs`: native GitHub stacked-PR creation, review, cascading rebase, verification, and merge guidance
 - `droopy-skills-install`: natural-language instructions for copying skills from this repo into project-level or user-level agent directories
 - `gh-address-comments`: GitHub PR review-thread workflow using `gh` CLI
 - `grill-me`: plan and design stress-testing through one-question-at-a-time alignment interviews
