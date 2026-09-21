@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import zipfile
+from datetime import datetime, timezone
 import urllib.parse
 import urllib.request
 
@@ -49,8 +51,11 @@ def send(args):
     receipt = pdf.with_name(pdf.name + '.delivery.json')
     digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
     request = {'sha256': digest, 'title': title, 'folder': args.folder}
+    prior = None
     if receipt.exists():
         prior = json.loads(receipt.read_text())
+        if prior.get("status") == "attempting":
+            raise ValueError("Unresolved attempting receipt; reconcile fresh listings before another upload")
         if all(prior.get(key) == value for key, value in request.items()):
             raise ValueError(f'Existing delivery receipt ({prior["status"]}); inspect it and the fresh destination listing before resending: {receipt}')
     transport = args.transport
@@ -78,9 +83,50 @@ def send(args):
             rows = usb_list(folder_id)
     else:
         rows = cloud_list(rmapi, args.folder)
-    if {title, title + '.pdf'} & names(rows, transport):
-        raise ValueError(f'Destination already contains {title!r}; choose a new title to preserve annotations')
-    record = {**request, 'transport': transport, 'status': 'attempting'}
+    def matching(rows, transport):
+        key = 'VissibleName' if transport == 'usb' else 'name'
+        return [row for row in rows if row.get(key) in {title, title + '.pdf'}]
+
+    existing = matching(rows, transport)
+    if len(existing) > 1:
+        raise ValueError('Duplicate destination titles; resolve the exact document before replacement')
+    if existing and transport == 'usb':
+        if args.transport == 'usb':
+            raise ValueError('USB replacement is unsupported; use cloud for a backed-up replacement')
+        transport = 'cloud'
+        rows = cloud_list(rmapi, args.folder)
+        existing = matching(rows, transport)
+        if len(existing) != 1:
+            raise ValueError('Device/cloud replacement target disagrees; wait for sync')
+    backup = None
+    replaced_id = None
+    if existing:
+        replaced_id = existing[0].get('id')
+        if not replaced_id or existing[0].get('type') != 'DocumentType':
+            raise ValueError('Replacement target is not a cloud document')
+        if prior and prior.get('document_id') != replaced_id:
+            raise ValueError('Receipt document ID differs from destination; reconcile before replacement')
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+        backup_dir = pdf.parent / 'delivery-backups' / stamp
+        backup_dir.mkdir(parents=True)
+        subprocess.run([rmapi, '-ni', 'get', '--id', replaced_id], cwd=backup_dir,
+                       check=True, timeout=180, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        archives = [p for p in backup_dir.iterdir() if p.is_file() and zipfile.is_zipfile(p)]
+        if len(archives) != 1:
+            raise ValueError('Document backup did not produce one ZIP-format archive; replacement stopped')
+        backup = archives[0]
+        with zipfile.ZipFile(backup) as archive:
+            if not archive.namelist() or archive.testzip():
+                raise ValueError('Invalid document backup; replacement stopped')
+        current = matching(cloud_list(rmapi, args.folder), transport)
+        if len(current) != 1 or any(current[0].get(key) != existing[0].get(key) for key in ('id', 'version', 'modifiedClient')):
+            raise ValueError('Replacement target changed after backup')
+    if prior:
+        archive = pdf.parent / 'delivery-backups' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+        archive.mkdir(parents=True)
+        shutil.copyfile(receipt, archive / receipt.name)
+    record = {**request, 'transport': transport, 'status': 'attempting', 'replaced_document_id': replaced_id,
+              'backup': str(backup) if backup else None}
     # Persist before mutation. A timeout must never trigger automatic fallback
     # or a second upload; leave an actionable receipt even after interruption.
     receipt.write_text(json.dumps(record, indent=2) + '\n')
@@ -97,9 +143,9 @@ def send(args):
                 raise ValueError('USB upload was not confirmed; inspect fresh listing before retrying')
             rows = usb_list(folder_id)
         else:
-            cloud(rmapi, 'put', str(upload), args.folder)
+            cloud(rmapi, 'put', *(['--force'] if existing else []), str(upload), args.folder)
             rows = cloud_list(rmapi, args.folder)
-    if not {title, title + '.pdf'} & names(rows, transport):
+    if len(matching(rows, transport)) != 1:
         raise ValueError('Upload returned but title is not listed yet; do not retry blindly')
     matched = next(row for row in rows if (row.get('VissibleName') if transport == 'usb' else row.get('name')) in {title, title + '.pdf'})
     record['document_id'] = matched.get('ID', matched.get('id'))
@@ -114,7 +160,7 @@ def main():
     parser.add_argument('pdf', type=Path)
     parser.add_argument('--title')
     parser.add_argument('--transport', choices=['auto', 'usb', 'cloud'], default='auto')
-    parser.add_argument('--folder', default='/', help='Existing destination folder; defaults to root')
+    parser.add_argument('--folder', default='/Inbox', help='Existing destination folder; defaults to /Inbox')
     args = parser.parse_args()
     try:
         send(args)

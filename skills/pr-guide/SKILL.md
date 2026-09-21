@@ -122,7 +122,15 @@ While analyzing, note (but don't dwell on):
 
 ### Step 6: Compose the Walkthrough
 
-Write the guide with these sections:
+Lead with the concrete problem and resulting behavior, then material reviewer caveats. Use the smallest structure that explains this change; omit empty sections and routine file-by-file repetition. The template below is illustrative, not mandatory.
+
+Place a small component tree, call flow, data structure sketch, or diagram beside the explanation it supports when it clarifies responsibilities or ordering. Use focused structural before/after views when useful. When diff notation obscures a mostly new structure, label the complete shape **Resulting structure** and briefly describe what it replaces. Label explanatory sketches, actual source excerpts, and proposed fixes distinctly.
+
+Generate actual code diffs programmatically from pinned commits; the agent selects reading order and writes interpretation, not patch transcription. For Inline evidence, select whole hunks or independently labelled source ranges from that snapshot. Keep an exact `.diff` sidecar and a manifest identifying the snapshot and selected files/hunks. Complete packets still require every changed file exactly once and the existing inventory checks. Never imply a curated selection is complete.
+
+Keep typography, tablet margins, rendering preferences, transport and document replacement in the destination skill. For reMarkable, compose with send-to-remarkable. Binary source assets are identified in the guide; include full binary/PDF appendices only when requested.
+
+An illustrative guide structure:
 
 ````markdown
 # PR #[number] Walkthrough: [Title]
@@ -257,7 +265,7 @@ In **Inline evidence** mode:
 - **Separate stack direction from abstraction level** - Frontend-to-backend and backend-to-frontend are both valid, but the guide should begin high on the abstraction ladder either way.
 - **Tell a story** - The reader should understand the feature by following the guide
 - **Be proportionate** - Standard mode is a concise map; Inline evidence mode is a curated, self-contained review packet
-- **Use diagrams** - ASCII art is great for showing data flow
+- **Use focused visuals** - Choose a component tree, call flow, structure sketch or diagram only when it clarifies the change; keep it beside the supported explanation
 - **Link to spec** - Reference requirements when relevant
 - **Make it scannable** - Clear headers, tables, bullet points
 
@@ -324,7 +332,7 @@ Before delivering the walkthrough:
 - [ ] Connections between files are explicit
 - [ ] Any reuse of existing code is highlighted
 - [ ] Diagram(s) help visualize the architecture (if complex)
-- [ ] Quick reference table is complete
+- [ ] Any quick reference table matches the stated coverage
 - [ ] Review notes capture any concerns or questions
 - [ ] The walkthrough is delivered only to the user-selected target(s)
 - [ ] Standard mode stays concise, or Inline evidence mode places curated evidence beside each relevant explanation

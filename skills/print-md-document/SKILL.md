@@ -34,6 +34,7 @@ Do not print when the user asks only to show, preview, convert, or inspect the P
 
 ## Rendering Choices
 
+- For reMarkable, apply the larger-type and asymmetric-margin profile in [send-to-remarkable](../send-to-remarkable/SKILL.md); its explicit renderer flags override the compact paper defaults below.
 - Use compact PDF by default for "save paper", "smaller font", "smaller margins", "scale down", "less pages", or similar requests.
 - Use normal DOCX/PDF rendering when the user wants a more spacious document:
 

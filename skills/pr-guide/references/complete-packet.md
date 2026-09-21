@@ -27,12 +27,14 @@ For a local branch comparison, the immutable Git inventory is authoritative. Nev
 
 ## Assemble and verify
 
+For a reMarkable destination, use the styled HTML renderer in [send-to-remarkable](../../send-to-remarkable/SKILL.md). Its reading profile owns typography and margins; other destinations use their own renderer.
+
 ```bash
 python3 ~/.agents/skills/pr-guide/scripts/build-review-packet.py \
   --repo /path/to/repo --plan /path/to/plan.json \
   --guide /path/to/guide.md --output /path/to/review.md
-bash ~/.agents/skills/print-md-document/scripts/render-md-printable.sh \
-  /path/to/review.md --output /path/to/review.pdf
+node ~/.agents/skills/send-to-remarkable/scripts/render-reading.cjs \
+  /path/to/review.md /path/to/review.pdf
 ```
 
 The builder checks the ordered plan against the pinned Git inventory, rejects duplicates/missing files, includes every textual patch without a line limit, labels binary changes, and emits `review.diff` plus `review.manifest.json` with section hashes. Added, deleted, renamed, mode-only, submodule, generated and lock files all count. Binary summaries and submodule commit changes are printed; binary payloads and nested submodule histories are not textual PR diffs. Non-UTF-8 text stops assembly rather than being silently corrupted.
@@ -40,3 +42,5 @@ The builder checks the ordered plan against the pinned Git inventory, rejects du
 The PDF may soft-wrap long lines; the `.diff` sidecar preserves exact bytes and signs. Inspect the PDF visually and verify extracted code for representative long lines, multi-page hunks and final sections. Do not claim completeness if the inventory disagrees, rendering clips/omits material, or any deliberate redaction is required. Resolve sensitive values before uploading; if redaction is necessary, identify omissions and call it a redacted packet.
 
 For reMarkable delivery, compose with `send-to-remarkable`; retain the PDF, plan, exact diff and manifest locally. A delivery request authorizes that document's upload.
+
+For other destinations use their renderer. Convert builder `<pre class="full-diff">` patches through a styled diff viewer when supported; do not regenerate patches with the model. Binary changes do not require embedded originals or full before/after PDF appendices unless requested.
