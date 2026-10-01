@@ -37,6 +37,7 @@ These are the skills this repo is actively meant to hold and copy from:
 - `pdf-to-text`: vision-first PDF extraction with bundled rendering and conversion guidance
 - `pr-guide`: guided PR walkthrough generation for review and onboarding
 - `self-improvement-loop`: generalized eval/rubric/harness setup and iterative score-improvement loop using Codex/subagent judges
+- `send-to-elevenreader`: adapt source material for complete, faithful listening and import it into Andrew's ElevenReader library
 - `ui-design-iteration-loop`: iterative screenshot-driven UI critique and polish loop
 
 ## Maintained Guides
